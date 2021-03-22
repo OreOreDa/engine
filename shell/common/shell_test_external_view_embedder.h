@@ -28,9 +28,12 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   // returns the new `post_preroll_result`.
   void UpdatePostPrerollResult(PostPrerollResult post_preroll_result);
 
-  // Updates the post preroll result to `PostPrerollResult::kResubmitFrame` for
-  // only the next frame.
-  void SetResubmitOnce();
+  // Gets the number of times the SubmitFrame method has been called in
+  // the external view embedder.
+  int GetSubmittedFrameCount();
+
+  // Returns the size of last submitted frame surface
+  SkISize GetLastSubmittedFrameSize();
 
  private:
   // |ExternalViewEmbedder|
@@ -59,8 +62,10 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   SkCanvas* CompositeEmbeddedView(int view_id) override;
 
   // |ExternalViewEmbedder|
-  void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<SurfaceFrame> frame) override;
+  void SubmitFrame(
+      GrDirectContext* context,
+      std::unique_ptr<SurfaceFrame> frame,
+      const std::shared_ptr<fml::SyncSwitch>& gpu_disable_sync_switch) override;
 
   // |ExternalViewEmbedder|
   void EndFrame(
@@ -74,10 +79,13 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
   bool SupportsDynamicThreadMerging() override;
 
   const EndFrameCallBack end_frame_call_back_;
+
   PostPrerollResult post_preroll_result_;
-  bool resubmit_once_;
 
   bool support_thread_merging_;
+
+  std::atomic<int> submitted_frame_count_;
+  std::atomic<SkISize> last_submitted_frame_size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestExternalViewEmbedder);
 };

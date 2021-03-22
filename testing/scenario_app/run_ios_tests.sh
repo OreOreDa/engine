@@ -33,12 +33,13 @@ if [[ $# -eq 1 ]]; then
   FLUTTER_ENGINE="$1"
 fi
 
-# Delete after LUCI push.
-"$SCRIPT_DIR/compile_ios_jit.sh" "$SRC_DIR/out/host_debug_unopt" "$SRC_DIR/out/$FLUTTER_ENGINE/clang_x64"
+# Make sure simulators rotate automatically for "PlatformViewRotation" test.
+# Can also be set via Simulator app Device > Rotate Device Automatically
+defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
 cd ios/Scenarios
 set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
-  -destination 'platform=iOS Simulator,name=iPhone 8' \
+  -destination 'platform=iOS Simulator,OS=13.0,name=iPhone 8' \
   test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE"
