@@ -223,13 +223,13 @@ void SceneUpdateContext::UpdateView(int64_t view_id,
 }
 
 void SceneUpdateContext::CreateView(int64_t view_id,
+                                    ViewHolder::ViewIdCallback on_view_created,
                                     bool hit_testable,
                                     bool focusable) {
   FML_LOG(INFO) << "CreateView for view holder: " << view_id;
   zx_handle_t handle = (zx_handle_t)view_id;
-  flutter::ViewHolder::Create(handle, nullptr,
-                              scenic::ToViewHolderToken(zx::eventpair(handle)),
-                              nullptr);
+  flutter::ViewHolder::Create(handle, std::move(on_view_created),
+                              scenic::ToViewHolderToken(zx::eventpair(handle)));
   auto* view_holder = ViewHolder::FromId(view_id);
   FML_DCHECK(view_holder);
 
@@ -250,8 +250,10 @@ void SceneUpdateContext::UpdateView(int64_t view_id,
   view_holder->set_focusable(focusable);
 }
 
-void SceneUpdateContext::DestroyView(int64_t view_id) {
-  ViewHolder::Destroy(view_id);
+void SceneUpdateContext::DestroyView(
+    int64_t view_id,
+    ViewHolder::ViewIdCallback on_view_destroyed) {
+  ViewHolder::Destroy(view_id, std::move(on_view_destroyed));
 }
 
 SceneUpdateContext::Entity::Entity(std::shared_ptr<SceneUpdateContext> context)
@@ -342,7 +344,7 @@ SceneUpdateContext::Frame::Frame(std::shared_ptr<SceneUpdateContext> context,
       paint_bounds_(SkRect::MakeEmpty()) {
   // Increment elevation trackers before calculating any local elevation.
   // |UpdateView| can modify context->next_elevation_, which is why it is
-  // neccesary to track this addtional state.
+  // necessary to track this additional state.
   context->top_elevation_ += kScenicZElevationBetweenLayers;
   context->next_elevation_ += kScenicZElevationBetweenLayers;
 
